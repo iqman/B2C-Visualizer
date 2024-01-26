@@ -10,7 +10,7 @@ namespace B2C_visualizer.GraphSourceGeneration
             // ""htmlLabels"": false,
 
             var header =
-@"%%{ init: { ""flowchart"": { 'nodeSpacing': 15, 'rankSpacing': 250, ""defaultRenderer"": ""elk""} } }%%
+@"%%{ init: { ""flowchart"": { 'nodeSpacing': 15, 'rankSpacing': 250} } }%%
 graph LR";
 
             string mermaid = string.Join(Environment.NewLine, header, string.Join(Environment.NewLine, sps.Select(GenerateForServicePrincipal)));
@@ -67,9 +67,17 @@ click {sp.AppId.ShortenId()}_link href "https://portal.azure.com/#view/Microsoft
 
         private static string GenerateOauth2RoleNodes(ServicePrincipal sp)
         {
-            return sp.DefinedOauth2Permissions.Any()
-                ? string.Join(Environment.NewLine, sp.DefinedOauth2Permissions.Select(r => $"    {r.Id.ShortenId()}[\"{r.Value}\"]"))
-                : $"    {sp.AppId.ShortenId()}_oauth2_perm_none[\"`*None*`\"]";
+            if (sp.IdentifierUris.Any())
+            {
+                if (sp.IdentifierUris.Count() > 1)
+                {
+                    throw new NotImplementedException();
+                }
+
+                return string.Join(Environment.NewLine, sp.DefinedOauth2Permissions.Select(r => $"    {r.Id.ShortenId()}[\"{sp.IdentifierUris.First()}/{r.Value}\"]"));
+            }
+
+            return $"    {sp.AppId.ShortenId()}_oauth2_perm_none[\"`*None*`\"]";
         }
 
         private static string GenerateAppRoleNodes(ServicePrincipal sp)

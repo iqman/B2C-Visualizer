@@ -15,7 +15,7 @@ record CommandlineOptions
     [Option('o', Required = false, HelpText = "Filename to output to. Will output to stdout if omitted.")]
     public required string OutputPaths { get; set; }
 
-    [Option('f', Required = false, Default = GraphFormat.Mermaid, HelpText = "Format of the output.")]
+    [Option('f', Required = false, Default = GraphFormat.Mermaid, HelpText = "Format of the output. Allowed values are 'PlantUML' and 'Mermaid'")]
     public required GraphFormat OutputFormat { get; set; }
 
     [Option('c', Required = false, Default = true, HelpText = "Whether to print the service principals/files that will be processed and ask for confirmation to proceed.")]

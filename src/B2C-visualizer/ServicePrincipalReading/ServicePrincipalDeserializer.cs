@@ -18,10 +18,35 @@ namespace B2C_visualizer.ServicePrincipalReading
             foreach (var c in stringifiedServicePrincipals)
             {
                 var sp = JsonSerializer.Deserialize(c, ServicePrincipalSourceGenerationContext.Default.ServicePrincipal);
-                if (sp != null) sps.Add(sp);
+                if (sp != null)
+                {
+                    AddDefaultScope(sp);
+                    sps.Add(sp);
+                }
             }
 
             return sps;
+        }
+
+        private void AddDefaultScope(ServicePrincipal sp)
+        {
+            if (!sp.DefinedOauth2Permissions.Any())
+            {
+                sp.DefinedOauth2Permissions = new List<Role>();
+            }
+            var scopes = new List<Role>
+            {
+                new Role()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Description = "Default scope",
+                    DisplayName = "Default scope",
+                    IsEnabled = true,
+                    Type = RoleType.Scope,
+                    Value = ".default"
+                }
+            };
+            sp.DefinedOauth2Permissions = scopes;
         }
     }
 
