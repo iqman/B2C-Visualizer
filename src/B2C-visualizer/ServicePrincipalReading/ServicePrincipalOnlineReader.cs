@@ -43,7 +43,7 @@ namespace B2C_visualizer.ServicePrincipalReading
 
         private string GetUrlForServicePrincipalId(Guid id)
         {
-            return $"https://graph.windows.net/myorganization/applicationsByAppId/{id}?api-version=2.0";
+            return $"https://graph.microsoft.com/beta/myorganization/applications(appId='{id}')";
         }
     }
 }

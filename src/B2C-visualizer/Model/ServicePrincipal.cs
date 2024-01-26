@@ -21,7 +21,10 @@ namespace B2C_visualizer.Model
         public IEnumerable<string> IdentifierUris { get; set; } = Enumerable.Empty<string>();
 
         [JsonPropertyName("name")]
-        public required string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("displayName")]
+        public string DisplayName { get { return Name; } set { Name = value; } }
 
         [JsonPropertyName("passwordCredentials")]
         public IEnumerable<Secret> Secrets { get; set; } = Enumerable.Empty<Secret>();
