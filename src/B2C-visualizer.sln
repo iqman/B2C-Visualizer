@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34330.188
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "B2C-visualizer", "B2C-visualizer\B2C-visualizer.csproj", "{FFFE6611-6BF2-4D23-BDB5-A1A9E34465D1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FFFE6611-6BF2-4D23-BDB5-A1A9E34465D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFFE6611-6BF2-4D23-BDB5-A1A9E34465D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFFE6611-6BF2-4D23-BDB5-A1A9E34465D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFFE6611-6BF2-4D23-BDB5-A1A9E34465D1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {221D5BC4-63FA-478F-9D19-3FB34579769A}
+	EndGlobalSection
+EndGlobal
