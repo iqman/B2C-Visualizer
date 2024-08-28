@@ -19,6 +19,6 @@ record CommandlineOptions
     public required GraphFormat OutputFormat { get; set; }
 
     [Option('c', Required = false, Default = true, HelpText = "Whether to print the service principals/files that will be processed and ask for confirmation to proceed.")]
-    public required bool AskConfirmation { get; set; }
+    public required bool? AskConfirmation { get; set; }
 
 }
