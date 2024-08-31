@@ -4,7 +4,9 @@
     {
         public required string Property { get; set; }
         public string? Value1 { get; set; }
+        public string? Value1DisplayName { get; set; }
         public string? Value2 { get; set; }
+        public string? Value2DisplayName { get; set; }
         public Similarity ExpectedSimilarity { get; set; }
 
         public Similarity ResultedSimilarity { get; set; }

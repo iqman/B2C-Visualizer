@@ -14,21 +14,12 @@ namespace B2C_visualizer.Comparison
             "test-"
         ];
 
+        private IEnumerable<ServicePrincipal> sps = [];
+
         public void Compare(IEnumerable<ServicePrincipal> sps)
         {
-            //billing
-            //var s1 = sps.ToArray()[1];//.GrantedResourceAccesses.ToArray();
-            //var s2 = sps.ToArray()[16];//.GrantedResourceAccesses.ToArray();
 
-
-            var kafkas = sps.Where(s => s.Name.Contains("kafka")).ToArray();
-
-            var s1 = kafkas[0];
-            var s2 = kafkas[1];
-
-
-            var names = sps.Select(s => s.Name).ToList();
-
+            this.sps = sps;
 
             string expected = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "comparison.html");
 
@@ -41,10 +32,10 @@ namespace B2C_visualizer.Comparison
 
             if (environmentSets.Count() != 2)
             {
-                throw new NotSupportedException($"You must compare exactly two sets of service principals at a time. Found service principals belong to these environments: {string.Join(',', environmentSets.Keys)}");
+                throw new NotSupportedException($"You must compare exactly two sets of service principals at a time. Found service principals belonging to these environments: {string.Join(',', environmentSets.Keys)}");
             }
 
-            var comparisons = CompareCollection("Everything", environmentSets.First().Value, environmentSets.Last().Value, 0, FindComparisons!, sp => RemoveEnvSpecificToken(sp.Name));
+            var comparisons = CompareCollection("Service Principals", environmentSets.First().Value, environmentSets.Last().Value, 0, CompareServicePrincipals!, sp => RemoveEnvSpecificToken(sp.Name));
 
 
             EvaluateComparisons(comparisons);
@@ -56,7 +47,7 @@ namespace B2C_visualizer.Comparison
             OpenReport(expected);
         }
 
-        private IEnumerable<Comparison> FindComparisons(ServicePrincipal sp1, ServicePrincipal sp2, int nestingLevel)
+        private IEnumerable<Comparison> CompareServicePrincipals(ServicePrincipal sp1, ServicePrincipal sp2, int nestingLevel)
         {
             
             List<Comparison> comparisons =
@@ -66,18 +57,18 @@ namespace B2C_visualizer.Comparison
                 new Comparison { Property = nameof(sp1.AppId), Value1 = sp1?.AppId, Value2 = sp2?.AppId, NestingLevel = nestingLevel, ExpectedSimilarity = Similarity.Different },
             ];
 
-            comparisons.AddRange(CompareCollection(nameof(sp1.DefinedAppRoles), sp1?.DefinedAppRoles, sp2?.DefinedAppRoles, nestingLevel, FindComparisons, r => r.Value));
-            comparisons.AddRange(CompareCollection(nameof(sp1.DefinedOauth2Permissions), sp1?.DefinedOauth2Permissions, sp2?.DefinedOauth2Permissions, nestingLevel, FindComparisons, p => p.Value));
-            comparisons.AddRange(CompareCollection(nameof(sp1.GrantedResourceAccesses), sp1?.GrantedResourceAccesses, sp2?.GrantedResourceAccesses, nestingLevel, FindComparisons, r => r.AppId));
-            comparisons.AddRange(CompareCollection(nameof(sp1.Secrets), sp1?.Secrets, sp2?.Secrets, nestingLevel, FindComparisons, s => s.DisplayName));
-            comparisons.AddRange(CompareCollection(nameof(sp1.CallbackUrls), sp1?.CallbackUrls, sp2?.CallbackUrls, nestingLevel, FindComparisons, cb => cb.Url));
+            comparisons.AddRange(CompareCollection(nameof(sp1.DefinedAppRoles), sp1?.DefinedAppRoles, sp2?.DefinedAppRoles, nestingLevel, CompareDefinedRoles, r => r.Value));
+            comparisons.AddRange(CompareCollection(nameof(sp1.DefinedOauth2Permissions), sp1?.DefinedOauth2Permissions, sp2?.DefinedOauth2Permissions, nestingLevel, CompareDefinedRoles, p => p.Value));
+            comparisons.AddRange(CompareCollection(nameof(sp1.GrantedResourceAccesses), sp1?.GrantedResourceAccesses, sp2?.GrantedResourceAccesses, nestingLevel, CompareResources, r => GetAppNameForComparison(r.AppId)));
+            comparisons.AddRange(CompareCollection(nameof(sp1.Secrets), sp1?.Secrets, sp2?.Secrets, nestingLevel, CompareSecrets, s => s.DisplayName));
+            comparisons.AddRange(CompareCollection(nameof(sp1.CallbackUrls), sp1?.CallbackUrls, sp2?.CallbackUrls, nestingLevel, CompareCallBackUrls, cb => cb.Url));
 
-            comparisons.AddRange(CompareCollection(nameof(sp1.IdentifierUris), sp1?.IdentifierUris, sp2?.IdentifierUris, nestingLevel, FindIdentifierUrisComparisons, u => u));
+            comparisons.AddRange(CompareCollection(nameof(sp1.IdentifierUris), sp1?.IdentifierUris, sp2?.IdentifierUris, nestingLevel, CompareIdentifierUris, u => u));
 
             return comparisons;
         }
 
-        private IEnumerable<Comparison> FindIdentifierUrisComparisons(string? s1, string? s2, int nestingLevel)
+        private IEnumerable<Comparison> CompareIdentifierUris(string? s1, string? s2, int nestingLevel)
         {
             return
             [
@@ -85,7 +76,7 @@ namespace B2C_visualizer.Comparison
             ];
         }
 
-        private IEnumerable<Comparison> FindComparisons(Role? r1, Role? r2, int nestingLevel)
+        private IEnumerable<Comparison> CompareDefinedRoles(Role? r1, Role? r2, int nestingLevel)
         {
             return
             [
@@ -98,7 +89,7 @@ namespace B2C_visualizer.Comparison
             ];
         }
 
-        private IEnumerable<Comparison> FindComparisons(Secret? s1, Secret? s2, int nestingLevel)
+        private IEnumerable<Comparison> CompareSecrets(Secret? s1, Secret? s2, int nestingLevel)
         {
             return
             [
@@ -110,7 +101,7 @@ namespace B2C_visualizer.Comparison
             ];
         }
 
-        private IEnumerable<Comparison> FindComparisons(CallBackUrl? c1, CallBackUrl? c2, int nestingLevel)
+        private IEnumerable<Comparison> CompareCallBackUrls(CallBackUrl? c1, CallBackUrl? c2, int nestingLevel)
         {
             return
             [
@@ -119,16 +110,96 @@ namespace B2C_visualizer.Comparison
             ];
         }
 
-        private IEnumerable<Comparison> FindComparisons(Resource? r1, Resource? r2, int nestingLevel)
+        private IEnumerable<Comparison> CompareResources(Resource? r1, Resource? r2, int nestingLevel)
         {
             List<Comparison> comparisons =
             [
                 new Comparison { Property = nameof(r1.AppId), Value1 = r1?.AppId.ToString(), Value2 = r2?.AppId.ToString(), NestingLevel = nestingLevel, ExpectedSimilarity = Similarity.DontCare },
             ];
 
-            comparisons.AddRange(CompareCollection(nameof(r1.Roles), r1?.Roles, r2?.Roles, nestingLevel, FindComparisons, r => r.Value));
+
+            var comparableRoleSet1 = CreateRoleWithDefiningParent(r1?.AppId!, r1?.Roles ?? []);
+            var comparableRoleSet2 = CreateRoleWithDefiningParent(r2?.AppId!, r2?.Roles ?? []);
+
+            comparisons.AddRange(CompareCollection(nameof(r1.Roles), comparableRoleSet1, comparableRoleSet2, nestingLevel, CompareGrantedRoles, GetGrantedRoleOwnerAndValueForComparison));
 
             return comparisons;
+        }
+
+        private IEnumerable<RoleWithDefiningParent> CreateRoleWithDefiningParent(string appId, IEnumerable<Role> roles)
+        {
+            return roles.Select(r => new RoleWithDefiningParent
+            {
+                Id = r.Id,
+                DefiningAppId = appId,
+                Description = r.Description,
+                DisplayName = r.DisplayName,
+                IsEnabled = r.IsEnabled,
+                Type = r.Type,
+                Value = r.Value,
+            });
+        }
+
+        private IEnumerable<Comparison> CompareGrantedRoles(RoleWithDefiningParent? role1, RoleWithDefiningParent? role2, int nestingLevel)
+        {
+            return
+            [
+                new Comparison { Property = nameof(role1.Type), Value1 = role1?.Type.ToString(), Value2 = role2?.Type.ToString(), NestingLevel = nestingLevel, ExpectedSimilarity = Similarity.Same },
+                new Comparison
+                {
+                    Property = nameof(role1.Id),
+                    Value1 = role1?.Id,
+                    Value2 = role2?.Id,
+                    NestingLevel = nestingLevel,
+                    ExpectedSimilarity = Similarity.DontCare,
+                    Value1DisplayName = GetGrantedRoleOwnerAndValueForPresentation(role1),
+                    Value2DisplayName = GetGrantedRoleOwnerAndValueForPresentation(role2)
+                },
+            ];
+        }
+
+        private string GetGrantedRoleOwnerAndValueForComparison(RoleWithDefiningParent? role)
+        {
+            if (role?.DefiningAppId != null)
+            {
+                var ownerValue = GetGrantedRoleOwnerAndValue(role.DefiningAppId, role.Id);
+                if (ownerValue.ownerName != null && ownerValue.value != null)
+                {
+                    return RemoveEnvSpecificToken(ownerValue.ownerName ?? string.Empty) + ownerValue.value;
+                }
+                else
+                {
+                    return role.DefiningAppId + role.Id;
+                }
+            }
+            return role?.Id ?? string.Empty;
+        }
+
+        private string GetGrantedRoleOwnerAndValueForPresentation(RoleWithDefiningParent? role)
+        {
+            if (role?.DefiningAppId != null)
+            {
+                var ownerValue = GetGrantedRoleOwnerAndValue(role.DefiningAppId, role.Id);
+                return $"{ownerValue.ownerName ?? "unknown"} -> {ownerValue.value ?? "unknown"}";
+            }
+            return string.Empty;
+        }
+
+        private (string? ownerName, string? value) GetGrantedRoleOwnerAndValue(string definingAppId, string roleId)
+        {
+            var owningApp = sps.Where(s => s.AppId == definingAppId).SingleOrDefault();
+            if (owningApp != null)
+            {
+                var roleValue = owningApp.DefinedAppRoles.Concat(owningApp.DefinedOauth2Permissions).Where(r => r.Id == roleId).SingleOrDefault()?.Value;
+                return (owningApp.Name, roleValue);
+            }
+
+            return (null, null);
+        }
+
+        private string GetAppNameForComparison(string appId)
+        {
+            return RemoveEnvSpecificToken(sps.Where(sp => sp.AppId == appId).SingleOrDefault()?.Name ?? appId);
         }
 
         private IEnumerable<Comparison> CompareCollection<T>(string collectionName, IEnumerable<T>? collection1, IEnumerable<T>? collection2, int nestingLevel, Func<T?, T?, int, IEnumerable<Comparison>> comparerFunc, Func<T, string> keySelectorFunc)
@@ -136,7 +207,7 @@ namespace B2C_visualizer.Comparison
             List<Comparison> totalComparisons = new List<Comparison>();
 
 
-            totalComparisons.Add(new Comparison { Property = collectionName, IsParent = true });
+            totalComparisons.Add(new Comparison { Property = collectionName, IsParent = true, NestingLevel = nestingLevel });
 
             var set1 = collection1 != null ? collection1 : new T[0];
             var set2 = collection2 != null ? collection2 : new T[0];
@@ -150,13 +221,13 @@ namespace B2C_visualizer.Comparison
                 var val2 = default(T?);
                 if (val1 != null)
                 {
-                    set1 = set1.Where(s => !ReferenceEquals(s, val1));
+                    set1 = set1.Where(s => !Equals(s, val1));
 
                     var matchingVal2s = set2.Where(s2 => keySelectorFunc(s2) == keySelectorFunc(val1));
                     if (matchingVal2s.Any())
                     {
                         val2 = matchingVal2s.First();
-                        set2 = set2.Where(s => !ReferenceEquals(s, val2));
+                        set2 = set2.Where(s => !Equals(s, val2));
                     }
                 }
                 else
@@ -164,7 +235,7 @@ namespace B2C_visualizer.Comparison
                     val2 = set2.Any() ? set2.First() : default;
                     if (val2 != null)
                     {
-                        set2 = set2.Where(s => !ReferenceEquals(s, val2));
+                        set2 = set2.Where(s => !Equals(s, val2));
 
                     }
                 }
@@ -174,7 +245,7 @@ namespace B2C_visualizer.Comparison
 
                 var itemComparisons = comparerFunc(val1, val2, nestingLevel +1);
 
-                totalComparisons.Add(new Comparison { Property = $"{collectionName}.[{counter}]", IsParent = true });
+                totalComparisons.Add(new Comparison { Property = $"{collectionName}.[{counter}]", IsParent = true, NestingLevel = nestingLevel });
 
                 foreach (var c in itemComparisons)
                 {
@@ -234,7 +305,13 @@ namespace B2C_visualizer.Comparison
 
                 if (valueParts.Length > 1)
                 {
-                    return string.Join("", valueParts);
+                    var valuePartsWithNoWeirdPostfix = valueParts;
+                    if (envId == "dev-" && valueParts.Length == 3 && valueParts[2] == "app")
+                    {
+                        valuePartsWithNoWeirdPostfix[1] = valuePartsWithNoWeirdPostfix[1].Trim('-');
+                        valuePartsWithNoWeirdPostfix = valuePartsWithNoWeirdPostfix[..^1];
+                    }
+                    return string.Join("", valuePartsWithNoWeirdPostfix);
                 }
             }
             return value;
@@ -273,11 +350,13 @@ namespace B2C_visualizer.Comparison
                     <meta http-equiv="X-UA-Compatible" content="ie=edge">
                     <title>Comparison</title>
                     <style>
-                        .diff-table tr:nth-child(odd) { background-color:#eee; }
-                        .diff-table tr:nth-child(even) { background-color:#fff; }
+                      .diff-table tr:nth-child(odd) { background-color:#eee; }
+                      .diff-table tr:nth-child(even) { background-color:#fff; }
                       .bad {background-color:red;}
                       .good {background-color:lightgreen;}
                       tr {transition: height 0.5s ease;}
+                      .display-name {color:grey;font-size:13px;}
+                      .level0.parent { background-color: darkgray !important;}
                     </style>
                 </head>
                 <body>
@@ -315,8 +394,14 @@ namespace B2C_visualizer.Comparison
                 html.AppendLine($"""
                 <tr class="level{coms[i].NestingLevel} {(isParent? "parent" : "")}">
                     <td class="prop">{HttpUtility.HtmlEncode(coms[i].Property)}</td>
-                    <td class="value1">{HttpUtility.HtmlEncode(coms[i].Value1)}</td>
-                    <td class="value2">{HttpUtility.HtmlEncode(coms[i].Value2)}</td>
+                    <td class="value1">
+                      <div>{HttpUtility.HtmlEncode(coms[i].Value1)}</div>
+                      <div class="display-name">{HttpUtility.HtmlEncode(coms[i].Value1DisplayName)}</div>
+                    </td>
+                    <td class="value2">
+                      <div>{HttpUtility.HtmlEncode(coms[i].Value2)}</div>
+                      <div class="display-name">{HttpUtility.HtmlEncode(coms[i].Value2DisplayName)}</div>
+                    </td>
                     <td class="expectancy">{GetSimilarityPrettyName(coms[i].ExpectedSimilarity)}</td>
                     <td class="result {(asExpected ? "good" : "bad")}">{GetResultString(coms[i])}</td>
                 </tr>
